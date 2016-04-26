@@ -1,5 +1,4 @@
 <?php
-
 /*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
@@ -10,16 +9,18 @@ namespace JobBrander\Jobs\Client\Providers;
 
 use JobBrander\Jobs\Client\Job;
 use JobBrander\Jobs\Client\Collection;
+
 //require_once '../../jobs-common/src/Providers/AbstractProvider.php';
 /**
  * Description of Glassdoor
  *
  * @author Alejandro
  */
-class Glassdoor extends AbstractProvider{
+class Glassdoor extends AbstractProvider
+{
+    protected $results  = null;
 
-    protected $results = null;
-     /**
+    /**
      * Map of setter methods to query parameters
      *
      * @var array
@@ -87,31 +88,28 @@ class Glassdoor extends AbstractProvider{
      *
      * @var array
      */
- protected $jobDefaults = ['jobTitle','location','source',
-        'date','jobViewUrl','jobListingId'
+    protected $jobDefaults = ['jobTitle', 'location', 'source',
+        'date', 'jobViewUrl', 'jobListingId'
     ];
-    
-    
-    
+
     public function __construct($parameters = [])
     {
         parent::__construct($parameters);
-        
+
         $this->addDefaultUserInformationToParameters($parameters);
-        if(array_key_exists("partnerId", $parameters)){
+        if (array_key_exists("partnerId", $parameters)) {
             $val = $parameters['partnerId'];
             unset($parameters['partnerId']);
             $this->setPartnerId($val);
         }
-        if(array_key_exists("apiKey", $parameters)){
+        if (array_key_exists("apiKey", $parameters)) {
             $val = $parameters['apiKey'];
             unset($parameters['apiKey']);
             $this->setApiKey($val);
         }
         array_walk($parameters, [$this, 'updateQuery']);
-        
     }
-    
+
     /**
      * Attempts to apply default user information to parameters when none provided.
      *
@@ -124,25 +122,25 @@ class Glassdoor extends AbstractProvider{
         $defaultKeys = [
             'userip' => 'REMOTE_ADDR',
             'useragent' => 'HTTP_USER_AGENT',
-            
         ];
 
-        array_walk($defaultKeys, function ($value, $key) use (&$parameters) {
+        array_walk($defaultKeys,
+            function ($value, $key) use (&$parameters) {
             if (!isset($parameters[$key]) && isset($_SERVER[$value])) {
                 $parameters[$key] = $_SERVER[$value];
             }
         });
-        if(!array_key_exists("action", $parameters)){
-            $parameters['action']="jobs";
+        if (!array_key_exists("action", $parameters)) {
+            $parameters['action'] = "jobs";
         }
-        if(!array_key_exists("format", $parameters)){
-            $parameters['format']=  $this->getFormat();
+        if (!array_key_exists("format", $parameters)) {
+            $parameters['format'] = $this->getFormat();
         }
-        if(!array_key_exists("v", $parameters)){
-            $parameters['v']=  '1.1';
+        if (!array_key_exists("v", $parameters)) {
+            $parameters['v'] = '1.1';
         }
     }
-    
+
     /**
      * Attempts to update current query parameters.
      *
@@ -159,7 +157,7 @@ class Glassdoor extends AbstractProvider{
 
         return $this;
     }
-    
+
     /**
      * Magic method to handle get and set methods for properties
      *
@@ -176,21 +174,22 @@ class Glassdoor extends AbstractProvider{
 
         return parent::__call($method, $parameters);
     }
-    
-    public function createJobObject($payload) {
-    
+
+    public function createJobObject($payload)
+    {
+
         $payload = static::parseAttributeDefaults($payload, $this->jobDefaults);
-var_dump($payload);
+
         $job = $this->createJobFromPayload($payload);
 
         $job = $this->setJobLocation($job, $payload['location']);
 
         $aux = $job->setCompany($payload['source'])
             ->setDatePostedAsString($payload['date']);
-var_dump($aux);
+
         return $aux;
     }
-    
+
     /**
      * Create new job from given payload
      *
@@ -211,25 +210,28 @@ var_dump($aux);
         ]);
     }
 
-    public function getFormat() {
+    public function getFormat()
+    {
         $validFormats = ['json']; //support for XML is comming soon
 
-        if (isset($this->queryParams['format'])
-            && in_array(strtolower($this->queryParams['format']), $validFormats)) {
+        if (isset($this->queryParams['format']) && in_array(strtolower($this->queryParams['format']),
+                $validFormats)) {
             return strtolower($this->queryParams['format']);
         }
 
         return 'json';
     }
 
-    public function getListingsPath() {
+    public function getListingsPath()
+    {
         return 'response';
     }
 
-    public function getUrl() {
+    public function getUrl()
+    {
         return 'http://api.glassdoor.com/api/api.htm?'.$this->getQueryString();
-        
     }
+
     /**
      * Get query string for client based on properties
      *
@@ -286,16 +288,18 @@ var_dump($aux);
         return $job;
     }
 
-    public function getVerb() {
+    public function getVerb()
+    {
         return 'GET';
     }
 
-    public function setPartnerId($val){
+    public function setPartnerId($val)
+    {
         $this->updateQuery($val, "t.p");
-        
     }
-    
-    public function setApiKey($val){
+
+    public function setApiKey($val)
+    {
         $this->updateQuery($val, "t.k");
     }
 
@@ -309,7 +313,7 @@ var_dump($aux);
     protected function getJobsCollectionFromListings(array $listings = array())
     {
         $collection = new Collection;
-//var_dump($listings['jobListings']);
+
         array_map(function ($item) use ($collection) {
 
             $job = $this->createJobObject($item);
@@ -321,4 +325,3 @@ var_dump($aux);
         return $collection;
     }
 }
-
