@@ -180,13 +180,15 @@ class Glassdoor extends AbstractProvider{
     public function createJobObject($payload) {
     
         $payload = static::parseAttributeDefaults($payload, $this->jobDefaults);
-//var_dump($payload);
+var_dump($payload);
         $job = $this->createJobFromPayload($payload);
 
         $job = $this->setJobLocation($job, $payload['location']);
 
-        return $job->setCompany($payload['source'])
+        $aux = $job->setCompany($payload['source'])
             ->setDatePostedAsString($payload['date']);
+var_dump($aux);
+        return $aux;
     }
     
     /**
@@ -205,6 +207,7 @@ class Glassdoor extends AbstractProvider{
             'url' => $payload['jobViewUrl'],
             'sourceId' => $payload['jobListingId'],
             'location' => $payload['location'],
+            'industry' => $payload['jobCategory']
         ]);
     }
 
